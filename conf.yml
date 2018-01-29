@@ -23,10 +23,6 @@ experiment:
 # Organize object groups
 namespace:
 
-  # Pick where our classes come from
-  modules:
-    - pcdsdevices.device_types
-
   # Group objects by parent class
   class:
     EpicsMotor:
