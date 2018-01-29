@@ -1,0 +1,42 @@
+# Pick which devices to load from database
+hutch: mfx
+
+# Load the daq
+daq:
+  lcls: 1
+  platform: 4
+
+# Hutch-specific imports
+load:
+  - hutch.py
+
+# Create experiment-specific objects
+questionnaire:
+  - motors
+
+# Import experiment-specific code
+experiment:
+  proposal: LS50
+  run: 16
+  import: experiment.User() as x
+
+# Organize object groups
+namespace:
+
+  # Pick where our classes come from
+  modules:
+    - pcdsdevices.device_types
+
+  # Group objects by parent class
+  class:
+    EpicsMotor:
+      - motors
+      - m
+    Slits:
+      - slits
+      - s
+
+  # Group objects by beamline metadata
+  metadata:
+    - beamline
+    - stand
