@@ -6,10 +6,6 @@ load:
   - hutch.py
 
 # Create experiment-specific objects
-questionnaire:
-  - motors
-
-# Import experiment-specific code
 experiment:
   proposal: LS50
   run: 16
