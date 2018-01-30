@@ -1,10 +1,5 @@
 # Pick which devices to load from database
-hutch: mfx
-
-# Load the daq
-daq:
-  lcls: 1
-  platform: 4
+beamline: mfx
 
 # Hutch-specific imports
 load:
