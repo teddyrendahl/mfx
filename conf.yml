@@ -1,0 +1,29 @@
+# Pick which devices to load from database
+beamline: mfx
+
+# Hutch-specific imports
+load:
+  - hutch.py
+
+# Create experiment-specific objects
+experiment:
+  proposal: LS50
+  run: 16
+  import: experiment.User() as x
+
+# Organize object groups
+namespace:
+
+  # Group objects by parent class
+  class:
+    EpicsMotor:
+      - motors
+      - m
+    Slits:
+      - slits
+      - s
+
+  # Group objects by beamline metadata
+  metadata:
+    - beamline
+    - stand
