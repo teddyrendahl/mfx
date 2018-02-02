@@ -1,13 +1,13 @@
 # Pick which devices to load from database
-beamline: mfx
+hutch: mfx
 
 # Hutch-specific imports
 load:
-  - hutch.py
+  - mfx.beamline
 
 # Create experiment-specific objects
 experiment:
-  proposal: LS50
+  proposal: LS21
   run: 16
   import: experiment.User() as x
 
