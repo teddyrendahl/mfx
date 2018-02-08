@@ -5,4 +5,4 @@
 HERE=`readlink -f $(dirname $0)`
 source "${HERE}/mfxversion"
 pathmunge "${CONDA_BIN}"
-run-in $@
+run-in python $@
