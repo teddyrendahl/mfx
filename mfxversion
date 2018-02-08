@@ -1,0 +1,13 @@
+#!/bin/bash
+# Define the current conda environment
+export CONDA_ENVNAME='pcds-0.5.2'
+export CONDA_BASE='/reg/g/pcds/pyps/conda/py36'
+
+HERE=`readlink -f $(dirname $0)`
+export PYTHONPATH="${HERE}:${HERE}/dev/devpath"
+export LD_LIBRARY_PATH=''
+
+export CONDA_ENV="${CONDA_BASE}/envs/${CONDA_ENVNAME}"
+export CONDA_BIN="${CONDA_ENV}/bin/wrappers/conda"
+
+source /reg/g/pcds/setup/pathmunge.sh

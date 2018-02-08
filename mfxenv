@@ -1,0 +1,6 @@
+#!/bin/bash
+# Source this to load the full environment that hutch python uses
+HERE=`readlink -f $(dirname $0)`
+source "${HERE}/mfxversion"
+pathmunge "${CONDA_BASE}/bin"
+source activate "${CONDA_ENVNAME}"
