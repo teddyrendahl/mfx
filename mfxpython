@@ -12,4 +12,4 @@ CONDA_BIN="${CONDA_ENV}/bin/wrappers/conda"
 
 source /reg/g/pcds/setup/pathmunge.sh
 pathmunge "${CONDA_BIN}"
-hutch-python --cfg "${HERE}/conf.yml" --db "${HERE}/../device_config/db.json"
+hutch-python --cfg "${HERE}/conf.yml" --db "${HERE}/../device_config/db.json" $@
