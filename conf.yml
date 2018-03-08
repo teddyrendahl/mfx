@@ -1,29 +1,7 @@
-# Pick which devices to load from database
 hutch: mfx
 
+# Locate happi database
+db: /reg/g/pcds/pyps/apps/hutch-python/device_config/db.json
+
 # Hutch-specific imports
-load:
-  - mfx.beamline
-
-# Create experiment-specific objects
-experiment:
-  proposal: LS21
-  run: 16
-  import: experiment.User() as x
-
-# Organize object groups
-namespace:
-
-  # Group objects by parent class
-  class:
-    EpicsMotor:
-      - motors
-      - m
-    Slits:
-      - slits
-      - s
-
-  # Group objects by beamline metadata
-  metadata:
-    - beamline
-    - stand
+load: mfx.beamline
