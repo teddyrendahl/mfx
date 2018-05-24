@@ -1,4 +1,7 @@
+import os
+import os.path
 import logging
+import subprocess
 
 from mfx.devices import LaserShutter
 from mfx.db import daq
@@ -286,3 +289,24 @@ class User:
             daq.disconnect()
             logger.info("Closing all laser shutters ...")
             self.configure_shutters()
+
+    def take_pedestals(self, nevents, record=True):
+        """
+        Take a set of pedestals with the Jungfrau
+
+        Parameters
+        ----------
+        nevents: int
+            Number of events
+
+        record: bool, optional
+            Whether to record or not
+        """
+        # Create subprocess call
+        cwd = os.getcwd()
+        script = os.path.join(cwd, 'scripts/jungfrau/take_pedestal.sh')
+        args = [script, str(nevents)]
+        if record:
+            args.append('--record')
+        # Execute
+        subprocess.call(args)
