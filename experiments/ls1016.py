@@ -1,4 +1,5 @@
 import os
+import time
 import os.path
 import logging
 import subprocess
@@ -207,12 +208,17 @@ class User:
         # Start recording
         logger.info("Starting DAQ run, -> record=%s", record)
         daq.begin(events=events, record=record)
+        time.sleep(2)  # Wait for the DAQ to get spinnign before sending events
+        logger.info("Starting EventSequencer ...")
+        sequencer.start()
         # Post information to elog
         # Wait for the DAQ to finish
         logger.info("Waiting or DAQ to complete %s events ...", events)
         daq.wait()
         logger.info("Run complete!")
         daq.end_run()
+        logger.info("Stopping Sequencer ...")
+        sequencer.stop()
         # time.sleep(3) / a leftover from original script
 
 
@@ -257,8 +263,6 @@ class User:
         # Preserve the original state of DAQ
         logger.info("Running delays %r, %s times ...", delays, nruns)
         delays = delays or [False]
-        logger.info("Starting EventSequencer ...")
-        sequencer.start()
         # Estimated time for completion
         try:
             for run in range(nruns):
