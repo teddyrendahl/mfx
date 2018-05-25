@@ -280,6 +280,8 @@ class User:
             Remainder of the kwargs are passed to ``perform_run`` to setup the DAQ
             and ELog. This includes ``record``, ``comment``, and ``post``
         """
+        # Stop the EventSequencer
+        sequencer.stop()
         self.configure_sequencer(rate=rate)
         self.configure_evr()
         # Preserve the original state of DAQ
@@ -309,11 +311,12 @@ class User:
             logger.warning("Scan interrupted by user request!")
         # Return the DAQ to the original state
         finally:
-            sequencer.stop()
             logger.info("Disconnecting from DAQ ...")
             daq.disconnect()
             logger.info("Closing all laser shutters ...")
             self.configure_shutters()
+            logger.info("Restarting the EventSequencer ...")
+            sequencer.start()
 
     def take_pedestals(self, nevents, record=True):
         """
