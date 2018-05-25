@@ -5,7 +5,7 @@ import logging
 import subprocess
 
 from mfx.devices import LaserShutter
-from mfx.db import daq
+from mfx.db import daq, elog
 from pcdsdevices.sequencer import EventSequencer, EventStep
 from pcdsdevices.evr import Trigger
 
@@ -81,9 +81,11 @@ class User:
     @property
     def shutter_status(self):
         """Show current shutter status"""
+        status = []
         for shutter in (evo_shutter1, evo_shutter2,
                         evo_shutter3, opo_shutter):
-            print("Shutter {} is {}".format(shutter.name, shutter.state.get()))
+            status.append(shutter.state.get())
+        return status
 
     def configure_shutters(self, pulse1=False, pulse2=False, pulse3=False, opo=False):
         """
@@ -109,7 +111,7 @@ class User:
         for state, shutter in zip((pulse1, pulse2, pulse3, opo),
                                   (evo_shutter1, evo_shutter2,
                                    evo_shutter3, opo_shutter)):
-            logger.info("Using %s : %s", shutter.name, state)
+            logger.debug("Using %s : %s", shutter.name, state)
             shutter.move(int(state) + 1)
 
     def configure_sequencer(self, rate='10Hz'):
@@ -227,19 +229,29 @@ class User:
         # Configure the shutters
         self.configure_shutters(**kwargs)
         # time.sleep(3) / a leftover from original script
+        # Post information to elog
+        if not daq.configured:  # Won't have runnumber without configuration
+            daq.configure()
+        runnum = daq.__control.runnumber()
+        comment = comment or ''
+        info = (runnum, events, record, comment, self.delay)
+        info.extend(self.shutter_status)
+        post_msg = post_template.format(info)
+        print(post)
+        if post:
+            elog.post(post_msg, runnum=runnum)
         # Start recording
         logger.info("Starting DAQ run, -> record=%s", record)
         daq.begin(events=events, record=record)
         time.sleep(2)  # Wait for the DAQ to get spinnign before sending events
-        logger.info("Starting EventSequencer ...")
+        logger.debug("Starting EventSequencer ...")
         sequencer.start()
-        # Post information to elog
         # Wait for the DAQ to finish
         logger.info("Waiting or DAQ to complete %s events ...", events)
         daq.wait()
         logger.info("Run complete!")
         daq.end_run()
-        logger.info("Stopping Sequencer ...")
+        logger.debug("Stopping Sequencer ...")
         sequencer.stop()
         # time.sleep(3) / a leftover from original script
 
@@ -338,3 +350,18 @@ class User:
             args.append('--record')
         # Execute
         subprocess.call(args)
+
+
+post_template = """"\
+Run {}. Acquiring {} events (record = {})
+
+{}
+
+Laser delay is set to {}. While the laser shutters are:
+
+EVO Pulse 1    ->     {}
+EVO Pulse 2    ->     {}
+EVO Pulse 3    ->     {}
+OPO Shutter    ->     {}
+"""
+
