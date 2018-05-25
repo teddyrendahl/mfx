@@ -39,12 +39,13 @@ seq_steps = [EventStep(seq_prefix, seq_no, step, name='step_{}'.format(step))
              for step in range(0, 20)]
 
 # Trigger objects
+evo = Trigger('MFX:LAS:EVR:01:TRIG5', name='evo_trigger')
 pacemaker = Trigger('MFX:LAS:EVR:01:TRIG4', name='pacemaker_trigger')
 inhibit = Trigger('MFX:LAS:EVR:01:TRIG6', name='inhibit_trigger')
 
 # Laser parameter
 opo_time_zero = 748935
-inhibit_delay = 500000
+base_inhibit_delay = 500000
 
 ###########################
 # Configuration Functions #
@@ -57,11 +58,32 @@ class User:
     evo_shutter2 = evo_shutter2
     evo_shutter3 = evo_shutter3
     sequencer = sequencer
+    inhibit = inhibit
+    pacemaker = pacemaker
 
     @property
     def current_rate(self):
         """Current configured EventSequencer rate"""
         return sequencer.sync_marker.get(as_string=True)
+
+    @property
+    def delay(self):
+        """
+        Laser delay in ns.
+        """
+        code = inhibit.eventcode.get()
+        ipulse = {198: 0, 210: 0, 211:1, 212:2}.get(code)
+        if ipulse is None:
+            print('Inhibit event code {:} invalid'.format(code))
+
+        return opo_time_zero+ipulse*1.e9/120. - pacemaker.ns_delay.get()
+
+    @property
+    def shutter_status(self):
+        """Show current shutter status"""
+        for shutter in (evo_shutter1, evo_shutter2,
+                        evo_shutter3, opo_shutter):
+            print("Shutter {} is {}".format(shutter.name, shutter.state.get()))
 
     def configure_shutters(self, pulse1=False, pulse2=False, pulse3=False, opo=False):
         """
@@ -146,7 +168,7 @@ class User:
             Requested laser delay in nanoseconds. Must be less that 15.5 ms
         """
         # Determine event code of inhibit pulse
-        logger.info("Setting delay %s", delay)
+        logger.info("Setting delay %s ns (%s us)", delay, delay/1000.)
         if delay <= 0.16e6:
             logger.debug("Triggering on simultaneous event code")
             inhibit_ec = 210
@@ -162,13 +184,13 @@ class User:
         else:
             raise ValueError("Invalid input %s ns, must be < 15.5 ms")
         # Determine relative delays
-        pulse_delay = ipulse*1.e9/120. # Convert to ns
+        pulse_delay = ipulse*1.e9/120 - delay # Convert to ns
         # Configure Inhibit pulse
-        inhibit_delay = opo_time_zero - inhibit_delay + pulse_delay
-        inhibit.configure({"eventcode": inhibit_ec, "delay": inhibit_delay})
+        inhibit_delay = opo_time_zero - base_inhibit_delay + pulse_delay
+        inhibit.configure({"eventcode": inhibit_ec, "ns_delay": inhibit_delay})
         # Conifgure Pacemaker pulse
         pacemaker_delay = opo_time_zero + pulse_delay
-        pacemaker.configure({"delay": pacemaker_delay})
+        pacemaker.configure({"ns_delay": pacemaker_delay})
 
 
     ######################
@@ -259,7 +281,7 @@ class User:
             and ELog. This includes ``record``, ``comment``, and ``post``
         """
         self.configure_sequencer(rate=rate)
-        #configure_evr()
+        self.configure_evr()
         # Preserve the original state of DAQ
         logger.info("Running delays %r, %s times ...", delays, nruns)
         delays = delays or [False]
@@ -272,8 +294,7 @@ class User:
                         logger.info("Beginning light events using delay %s", delay)
                         # Set the laser delay if it exists
                         if delay:
-                            pass
-                            #self.set_delay(delay)
+                            self.set_delay(delay)
                         # Perform the light run
                         self.perform_run(light_events, pulse1=pulse1,
                                          pulse2=pulse2, pulse3=pulse3,
@@ -307,7 +328,7 @@ class User:
             Whether to record or not
         """
         # Create subprocess call
-        cwd = os.getcwd()
+        cwd = '/reg/g/pcds/pyps/apps/hutch-python/mfx'
         script = os.path.join(cwd, 'scripts/jungfrau/take_pedestal.sh')
         args = [script, str(nevents)]
         if record:
