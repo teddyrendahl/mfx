@@ -1,6 +1,7 @@
 """
 Take a pedestal for the Jungfrau
 """
+import time
 import socket
 import argparse
 
@@ -10,7 +11,7 @@ from pswww import pypsElog
 
 
 gainmodes = ['Normal','ForcedGain1','ForcedGain2']
-#daq = Control(socket.gethostname(), 4)
+daq = Control(socket.gethostname(), 4)
 #elog = pypElog.pypsElog()
 hutch = 'mfx'
 aliases = ['BEAM']
@@ -28,6 +29,7 @@ class Jungfrau(Dcfg):
         # Need to pass src if not MfxEndstation.0:Jungfrau.0 
         #In [34]: psana.DetInfo(48,0,43,1)
         # Out[34]: DetInfo(MfxEndstation.0:Jungfrau.1)
+        self.src = src
         Dcfg.__init__(self, hutch, *aliases, src=src, typeid=0x3006b) 
         self._add_methods("gainMode", "gainMode")
         self._jfGainMode = {'FixedGain1': 1,
@@ -58,16 +60,17 @@ def takeJungfrauPedestals(record=True, nEvts=1000):
 
     srcs = []
     # get the list of Jungfrau in the partition
-    for node in daq.getPartition()['nodes']:
+    for node in daq.partition()['nodes']:
         if node['record'] and (((node['phy'] & 0xff00) >> 8) ==43):
             srcs.append(node['phy'])
     jfs = [ Jungfrau(hutch, src, *aliases) for src in srcs ]
 
     for jf in jfs:
         currMode=jf.get_gainmode()
-        print 'current mode: ',jf.gainName(currMode)
+        print 'current mode for {} : {}'.format(jf.src, jf.gainName(currMode))
     for thisgainmode in gainmodes:
         for jf in jfs:
+            print 'Collecting pedestal for {} with mode {}'.format(jf.src,  thisgainmode)
             if isinstance(thisgainmode, basestring):
                 thisgainmode_string = thisgainmode
                 thisgainmode = jf._jfGainMode[thisgainmode]
@@ -90,11 +93,11 @@ def takeJungfrauPedestals(record=True, nEvts=1000):
         daq.endrun()
         print 'took run %d for gain %s with %d events'%(daq.runnumber(),thisgainmode_string, nEvts)
 
-        for jf in jfs:
-            jf.set_gainmode(0)
-            jf.commit()
-        print 'now call makepeds -J -r ',int(daq.runnumber())-2
-        daq.disconnect()
+    for jf in jfs:
+        jf.set_gainmode(0)
+        jf.commit()
+    print 'now call makepeds -J -r ',int(daq.runnumber())-2
+    daq.disconnect()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -102,5 +105,4 @@ if __name__ == '__main__':
     parser.add_argument('--record', action='store_true',
                         help='Option to record')
     args = parser.parse_args()
-    print(args)
-    #takeJungfrauPedestals(record=args.record, nEvts=args.nevents)
+    takeJungfrauPedestals(record=args.record, nEvts=args.nevents)
