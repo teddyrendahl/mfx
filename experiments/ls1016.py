@@ -151,10 +151,10 @@ class User:
         logger.debug("Configuring triggers to defaults ...")
         # Pacemaker Trigger
         pacemaker.configure({'eventcode': 40, 'polarity': 0,
-                             'width': 50000./1e9})
+                             'width': 50000.})
         pacemaker.enable()
         # Inhibit Trigger
-        inhibit.configure({'polarity': 1, 'width': 2000000./1e9})
+        inhibit.configure({'polarity': 1, 'width': 2000000.})
         inhibit.enable()
 
 
